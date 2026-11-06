@@ -30,11 +30,11 @@ def ergebnis(wert):
 
 def main():
     config = {
-        "user": os.environ["OCI_USER"],
-        "fingerprint": os.environ["OCI_FINGERPRINT"],
-        "tenancy": os.environ["OCI_TENANCY"],
-        "region": os.environ["OCI_REGION"],
-        "key_content": os.environ["OCI_KEY"],
+        "user": os.environ["OCI_USER"].strip(),
+        "fingerprint": os.environ["OCI_FINGERPRINT"].strip(),
+        "tenancy": os.environ["OCI_TENANCY"].strip(),
+        "region": os.environ["OCI_REGION"].strip(),
+        "key_content": os.environ["OCI_KEY"].strip() + "\n",
     }
     oci.config.validate_config(config)
     compartment = config["tenancy"]

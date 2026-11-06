@@ -1,1 +1,43 @@
+name: Oracle-Server anfragen
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # alle 6 Stunden ein neuer Lauf von knapp 6 Stunden
+  workflow_dispatch:        # von Hand starten moeglich
+
+concurrency:
+  group: oracle-anfragen
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  anfragen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet oci
+      - id: lauf
+        run: python server_anfragen.py
+        env:
+          OCI_USER: ${{ secrets.OCI_USER }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_TENANCY: ${{ secrets.OCI_TENANCY }}
+          OCI_REGION: ${{ secrets.OCI_REGION }}
+          OCI_KEY: ${{ secrets.OCI_KEY }}
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      - name: Meldung bei Erfolg
+        if: startsWith(steps.lauf.outputs.ergebnis, 'erfolg')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Oracle-Server gefunden!" \
+            --body "Der Gratis-Server wurde erstellt (${{ steps.lauf.outputs.ergebnis }}). Bitte diesen Workflow jetzt deaktivieren."
 

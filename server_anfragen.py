@@ -5,20 +5,20 @@ bis einer frei ist. Zugangsdaten kommen aus den GitHub-Secrets.
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import oci
 
 SERVER_NAME = "trading-bot"
 NETZ_NAME = "trading-bot-netz"
 GROESSEN = [(2, 12), (1, 6)]
-WARTEN_SEKUNDEN = 90
+WARTEN_SEKUNDEN = 75
 SPEICHER_GB = 50
 LAUFZEIT_SEKUNDEN = 5 * 3600 + 40 * 60   # knapp unter 6 Stunden (GitHub-Grenze)
 
 
 def log(text):
-    print(f"[{datetime.utcnow():%Y-%m-%d %H:%M:%S} UTC] {text}", flush=True)
+    print(f"[{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC] {text}", flush=True)
 
 
 def ergebnis(wert):
@@ -80,7 +80,8 @@ def main():
             return
 
         runde += 1
-        for kerne, ram in GROESSEN:
+        # pro Runde nur eine Anfrage, Groessen abwechseln (Oracle bremst sonst mit 429)
+        for kerne, ram in [GROESSEN[(runde - 1) % len(GROESSEN)]]:
             details = oci.core.models.LaunchInstanceDetails(
                 availability_domain=ad, compartment_id=compartment,
                 display_name=SERVER_NAME, shape="VM.Standard.A1.Flex",
@@ -102,14 +103,13 @@ def main():
                 if "capacity" in text:
                     log(f"Runde {runde}: kein Platz fuer {kerne}/{ram} GB.")
                 elif e.status == 429:
-                    log("Zu viele Anfragen, warte 5 Minuten.")
-                    time.sleep(300)
+                    log("Zu viele Anfragen, warte 3 Minuten.")
+                    time.sleep(180)
                 elif e.status in (500, 502, 503, 504):
                     log(f"Oracle-Fehler {e.status}, versuche weiter.")
                 else:
                     log(f"Unerwarteter Fehler {e.status} {e.code}: {e.message}")
                     sys.exit(1)
-            time.sleep(5)
         time.sleep(WARTEN_SEKUNDEN)
     log("Zeit abgelaufen, der naechste geplante Lauf macht weiter.")
 

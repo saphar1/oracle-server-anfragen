@@ -12,7 +12,7 @@ import oci
 SERVER_NAME = "trading-bot"
 NETZ_NAME = "trading-bot-netz"
 GROESSEN = [(2, 12), (1, 6)]
-WARTEN_SEKUNDEN = 75
+WARTEN_SEKUNDEN = 200   # Oracle erlaubt nur etwa eine Startanfrage alle 3 bis 4 Minuten
 SPEICHER_GB = 50
 LAUFZEIT_SEKUNDEN = 5 * 3600 + 40 * 60   # knapp unter 6 Stunden (GitHub-Grenze)
 
